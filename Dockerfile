@@ -37,34 +37,39 @@ RUN apt-mark hold ros-kinetic-librealsense
 # install pyrobot
 # `https://github.com/facebookresearch/pyrobot`
 RUN sudo apt-get install curl
-RUN curl 'https://raw.githubusercontent.com/facebookresearch/pyrobot/master/robots/LoCoBot/install/locobot_install_all.sh' > ~/locobot_install_all.sh
-RUN cd && chmod +x locobot_install_all.sh
-RUN cd && ./locobot_install_all.sh -t sim_only -p 3
+RUN /bin/bash -c "alias python='/usr/bin/python3.5'"
+RUN /bin/bash -c ". /root/.bashrc"
+RUN sudo apt install -y python3-pip
+RUN pip3 install numpy --upgrade
+RUN curl 'https://raw.githubusercontent.com/facebookresearch/pyrobot/master/robots/LoCoBot/install/locobot_install_all.sh' > /root/locobot_install_all.sh
+RUN chmod +x /root/locobot_install_all.sh
+RUN /bin/bash -c "cd /root/; ./locobot_install_all.sh -t sim_only -p 3"; exit 0
 
 # compile tf2_ros for python3, else pyrobot import will fail
 # more details at `https://answers.ros.org/question/326226/importerror-dynamic-module-does-not-define-module-export-function-pyinit__tf2/`
 RUN sudo apt update
 RUN sudo apt install python3-catkin-pkg-modules python3-rospkg-modules python3-empy
-RUN cd ~/pyrobot_catkin_ws && catkin_make
-RUN source devel/setup.bash
-RUN wstool init
-RUN wstool set -y src/geometry2 --git https://github.com/ros/geometry2 -v 0.6.5
-RUN wstool up
-RUN rosdep install --from-paths src --ignore-src -y -r
-RUN catkin_make --cmake-args \
+RUN /bin/bash -c ". /opt/ros/kinetic/setup.bash; cd /root/pyrobot_catkin_ws; catkin_make"
+RUN /bin/bash -c ". /root/pyrobot_catkin_ws/devel/setup.bash"
+RUN /bin/bash -c "cd /root/pyrobot_catkin_ws; wstool init"
+RUN /bin/bash -c "cd /root/pyrobot_catkin_ws; wstool set -y src/geometry2 --git https://github.com/ros/geometry2 -v 0.6.5"
+RUN /bin/bash -c "cd /root/pyrobot_catkin_ws; wstool up"
+RUN /bin/bash -c "cd /root/pyrobot_catkin_ws; rosdep install --from-paths src --ignore-src -y -r"
+RUN /bin/bash -c ". /opt/ros/kinetic/setup.bash; cd /root/pyrobot_catkin_ws; catkin_make --cmake-args \
             -DCMAKE_BUILD_TYPE=Release \
             -DPYTHON_EXECUTABLE=/usr/bin/python3 \
             -DPYTHON_INCLUDE_DIR=/usr/include/python3.6m \
-            -DPYTHON_LIBRARY=/usr/lib/x86_64-linux-gnu/libpython3.6m.so
-
+            -DPYTHON_LIBRARY=/usr/lib/x86_64-linux-gnu/libpython3.6m.so"
 
 # install gym and pybullet
-RUN pip install gym
-RUN pip install pybullet
+RUN pip3 install gym
+RUN pip3 install pybullet
 
 # clone the softlearning repository and install
 # `https://github.com/rail-berkeley/softlearning`
-RUN cd ~
-RUN git clone https://github.com/rail-berkeley/softlearning.git
-RUN cd ~/softlearning 
-RUN python setup.py build && python setup.py install
+RUN git clone https://github.com/rail-berkeley/softlearning.git /root/softlearning
+RUN /bin/bash -c "cd /root/softlearning; python setup.py build"
+RUN /bin/bash -c "cd /root/softlearning; python setup.py install"
+
+# activate the pyrobot environment
+RUN /bin/bash -c ". /root/pyenv_pyrobot_python3/bin/activate"
